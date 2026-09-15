@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Chat App</title>
+<style>
+:root{--primary:#4F46E5;--primary-dark:#4338CA;--primary-light:#EEF2FF;--bg:#F9FAFB;--bg-darker:#F3F4F6;--white:#FFF;--text:#111827;--muted:#6B7280;--border:#E5E7EB;--success:#10B981;--overlay:rgba(17,24,39,.5);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--shadow-lg:0 20px 40px rgba(0,0,0,.15)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:#E5E7EB}
+.app-container{position:fixed;top:0;left:0;right:0;margin:0 auto;width:100%;max-width:400px;height:100vh;height:100dvh;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);will-change:height,top}
+@media(min-width:401px){.app-container{top:5vh;height:90vh;border-radius:24px}}
+.chat-screen{display:flex;flex-direction:column;height:100%;width:100%;background:var(--bg)}
+.chat-header{background:var(--white);padding:14px 18px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:5;flex-shrink:0}
+.profile-info{display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity .2s}
+.profile-info:active{opacity:.7}
+.avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd;border:2px solid var(--primary-light)}
+.user-details h2{font-size:16px;font-weight:600;color:var(--text)}
+.user-details p{font-size:12px;color:var(--success);font-weight:500;margin-top:2px;display:flex;align-items:center;gap:5px}
+.user-details p::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.call-btn{background:var(--primary-light);border:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease,background .2s}
+.call-btn:active{transform:scale(.9);background:#E0E7FF}
+.call-btn svg{width:20px;height:20px;fill:var(--primary)}
+.chat-body{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.chat-body::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.08);border-radius:4px}
+.message{max-width:78%;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.45;box-shadow:var(--shadow-sm);animation:msgIn .28s cubic-bezier(.25,.8,.25,1);word-break:break-word;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.msg-received{background:var(--white);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;border:1px solid var(--border)}
+.msg-sent{background:var(--primary);color:var(--white);align-self:flex-end;border-bottom-right-radius:4px}
+.message .chat-media{max-width:100%;max-height:260px;border-radius:10px;display:block;margin-bottom:6px;object-fit:cover;background:#000;-webkit-user-select:none;user-select:none;pointer-events:auto}
+.message .chat-media-text{display:block;word-break:break-word}
+.chat-input-area{background:var(--white);padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;border-top:1px solid var(--border);flex-shrink:0}
+.chat-input{flex:1;padding:11px 16px;border-radius:24px;border:1px solid var(--border);outline:none;font-size:15px;background:var(--bg-darker);transition:border-color .2s,background .2s,box-shadow .2s;color:var(--text)}
+.chat-input:focus{border-color:var(--primary);background:var(--white);box-shadow:0 0 0 3px rgba(79,70,229,.08)}
+.send-btn{background:var(--primary);border:none;width:42px;height:42px;border-radius:50%;display:flex;justify-content:center;align-items:center;cursor:pointer;transition:transform .15s,background .2s;flex-shrink:0}
+.send-btn:active{transform:scale(.9);background:var(--primary-dark)}
+.send-btn svg{width:18px;height:18px;fill:#fff;margin-left:2px}
+.overlay{position:absolute;inset:0;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:30;backdrop-filter:blur(2px)}
+.overlay.active{opacity:1;pointer-events:auto}
+.call-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--white);border-radius:24px 24px 0 0;padding:6px 14px 22px;padding-bottom:calc(22px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .4s cubic-bezier(.25,.8,.25,1);z-index:31;box-shadow:0 -10px 40px rgba(0,0,0,.15);will-change:transform}
+.call-sheet.active{transform:translateY(0)}
+.sheet-handle{width:40px;height:4px;background:#D1D5DB;border-radius:4px;margin:8px auto 14px}
+.sheet-title{font-size:13px;font-weight:600;color:var(--muted);padding:0 10px 10px;text-transform:uppercase;letter-spacing:.6px}
+.call-option{width:100%;display:flex;align-items:center;gap:14px;padding:14px 10px;background:transparent;border:none;border-radius:16px;cursor:pointer;transition:background .2s,transform .15s;text-align:left}
+.call-option:active{background:var(--bg-darker);transform:scale(.98)}
+.call-icon-wrap{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.call-icon-wrap.audio{background:#DCFCE7}
+.call-icon-wrap.video{background:#DBEAFE}
+.call-icon-wrap svg{width:22px;height:22px}
+.call-icon-wrap.audio svg{fill:#16A34A}
+.call-icon-wrap.video svg{fill:#2563EB}
+.call-info h4{font-size:15px;font-weight:600;color:var(--text)}
+.call-info p{font-size:13px;color:var(--muted);margin-top:2px}
+.toast{position:absolute;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-150%);background:#111827;color:#fff;padding:14px 22px;border-radius:14px;font-size:14px;font-weight:500;line-height:1.4;text-align:center;max-width:88%;width:max-content;box-shadow:0 12px 32px rgba(0,0,0,.35);z-index:200;opacity:0;transition:transform .45s cubic-bezier(.25,.8,.25,1),opacity .35s ease;pointer-events:none;display:flex;align-items:center;gap:10px;justify-content:center}
+.toast.active{transform:translateX(-50%) translateY(0);opacity:1}
+.toast-icon{font-size:18px;flex-shrink:0}
+.toast-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:toastSpin .7s linear infinite;flex-shrink:0;display:none}
+.toast-spinner.active{display:inline-block}
+@keyframes toastSpin{to{transform:rotate(360deg)}}
+.download-btn{position:absolute;bottom:max(20%,calc(100px + env(safe-area-inset-bottom)));right:14px;width:135px;height:135px;z-index:25;cursor:pointer;display:block;animation:floatY 2.6s ease-in-out infinite;filter:drop-shadow(0 6px 14px rgba(0,0,0,.28));-webkit-user-select:none;user-select:none;transition:transform .2s ease,width .2s ease,height .2s ease,bottom .2s ease}
+.download-btn:active{transform:scale(.9)}
+.download-btn img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none}
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+html.kb-open .download-btn{width:92px;height:92px;bottom:max(14%,calc(78px + env(safe-area-inset-bottom)))}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <div class="chat-screen">
+    <div class="chat-header">
+      <div class="profile-info" id="openProfileBtn">
+        <img src="https://res.cloudinary.com/pvai8pie/image/upload/v1787898286/sawtkpsfhffafef8sgli.jpg" class="avatar">
+        <div class="user-details">
+          <h2>Mavies Khan 🫦</h2>
+          <p>Online</p>
+        </div>
+      </div>
+      <button class="call-btn" id="callBtn">
+        <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
+      </button>
+    </div>
+    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" placeholder="Message..." id="msgInput" autocomplete="off">
+      <button class="send-btn" id="sendBtn">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <div class="call-sheet" id="callSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Call Mavies</div>
+    <button class="call-option" data-type="audio">
+      <div class="call-icon-wrap audio"><svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg></div>
+      <div class="call-info"><h4>Audio Call</h4><p>Voice call · ₹1.00</p></div>
+    </button>
+    <button class="call-option" data-type="video">
+      <div class="call-icon-wrap video"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>
+      <div class="call-info"><h4>Video Call</h4><p>Video call · ₹2.00</p></div>
+    </button>
+  </div>
+  <div class="toast" id="toast">
+    <span class="toast-icon">📱</span>
+    <span id="toastMsg">Download the app for full access</span>
+    <span class="toast-spinner" id="toastSpinner"></span>
+  </div>
+  <a class="download-btn" id="downloadBtn" href="https://github.com/km0183416-del/probable-robot/raw/refs/heads/main/SecretRoom.apk" rel="noopener noreferrer">
+    <img src="https://res.cloudinary.com/pvai8pie/image/upload/v1789191078/zfmhpyzfl6wp6ymr9etr.webp" alt="Download App">
+  </a>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const chatBody=$('chatBody'),msgInput=$('msgInput'),sendBtn=$('sendBtn'),callBtn=$('callBtn'),overlay=$('overlay'),callSheet=$('callSheet'),openProfileBtn=$('openProfileBtn'),toastEl=$('toast'),toastMsgEl=$('toastMsg'),toastSpinnerEl=$('toastSpinner'),downloadBtn=$('downloadBtn');
+const toastIconEl=toastEl.querySelector('.toast-icon');
+
+(function(){
+  const appEl=document.querySelector('.app-container');
+  const vv=window.visualViewport;
+  let raf=null;
+  function sync(){
+    if(!appEl)return;
+    if(window.innerWidth>400){appEl.style.height='';appEl.style.top='';document.documentElement.classList.remove('kb-open');return;}
+    const h=vv?vv.height:window.innerHeight;
+    const t=vv?vv.offsetTop:0;
+    appEl.style.height=h+'px';
+    appEl.style.top=t+'px';
+    document.documentElement.classList.toggle('kb-open',(window.innerHeight-h)>120);
+  }
+  function sch(){if(raf)return;raf=requestAnimationFrame(()=>{raf=null;sync();});}
+  if(vv){vv.addEventListener('resize',sch);vv.addEventListener('scroll',sch);}
+  window.addEventListener('resize',sch);
+  window.addEventListener('orientationchange',()=>setTimeout(sync,150));
+  sync();
+})();
+
+function sendToNative(a,d){const j=JSON.stringify({action:a,data:d});if(window.Android&&window.Android.sendData)window.Android.sendData(j);}
+
+let toastTimer=null;
+function showToast(msg,icon='📱',opt={}){
+  const{persistent=false,spinner=false,duration=2200}=opt;
+  toastMsgEl.textContent=msg;
+  if(toastIconEl)toastIconEl.textContent=icon;
+  toastSpinnerEl.classList.toggle('active',spinner);
+  toastEl.classList.add('active');
+  clearTimeout(toastTimer);
+  if(!persistent)toastTimer=setTimeout(()=>{toastEl.classList.remove('active');toastSpinnerEl.classList.remove('active');},duration);
+}
+function hideToast(){clearTimeout(toastTimer);toastEl.classList.remove('active');toastSpinnerEl.classList.remove('active');}
+function updateToast(msg,{spinner=false}={}){toastMsgEl.textContent=msg;toastSpinnerEl.classList.toggle('active',spinner);}
+
+function filterMessageLinks(t){
+  if(!t)return"";
+  return String(t)
+    .replace(/https?:\/\/res\.cloudinary\.com\/[^\s]+/gi,'')
+    .replace(/https?:\/\/[^\s]*\.(jpg|jpeg|png|gif|webp|bmp|svg|mp4|mov|webm|avi|mkv|m3u8|heic|m4v|3gp)(\?[^\s]*)?/gi,'')
+    .replace(/https?:\/\/(?:www\.)?cloudinary\.com\/[^\s]+/gi,'')
+    .replace(/\s{2,}/g,' ').trim();
+}
+function extractMediaUrl(t){
+  if(!t)return null;
+  let m=String(t).match(/https?:\/\/res\.cloudinary\.com\/[^\s]+/i);
+  if(m)return m[0];
+  m=String(t).match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|bmp|svg|mp4|mov|webm|avi|mkv|m3u8|heic|m4v|3gp)(\?[^\s]*)?/i);
+  return m?m[0]:null;
+}
+function detectMediaType(url,explicit){
+  if(explicit){const t=String(explicit).toLowerCase();if(t==='video'||t==='image')return t;}
+  if(!url)return'image';
+  const u=String(url).toLowerCase();
+  if(u.includes('/video/upload/'))return'video';
+  if(/\.(mp4|mov|webm|avi|mkv|m3u8|m4v|3gp|flv)(\?|#|$)/.test(u))return'video';
+  return'image';
+}
+
+let audioCtx=null;
+function ensureAudioCtx(){
+  if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  return audioCtx;
+}
+let lastTypeSound=0;
+function playTypeSound(){
+  const ctx=ensureAudioCtx();if(!ctx)return;
+  const now=performance.now();
+  if(now-lastTypeSound<90)return;
+  lastTypeSound=now;
+  const t=ctx.currentTime;
+  const o1=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();
+  o1.type='sine';o2.type='sine';
+  const bf=620+Math.random()*40;
+  o1.frequency.setValueAtTime(bf,t);
+  o1.frequency.exponentialRampToValueAtTime(bf*1.35,t+.06);
+  o2.frequency.setValueAtTime(bf*1.5,t);
+  o2.frequency.exponentialRampToValueAtTime(bf*1.8,t+.05);
+  f.type='lowpass';f.frequency.setValueAtTime(2200,t);f.Q.value=.6;
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(.045,t+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,t+.22);
+  o1.connect(f);o2.connect(f);f.connect(g);g.connect(ctx.destination);
+  o1.start(t);o2.start(t);o1.stop(t+.28);o2.stop(t+.28);
+}
+msgInput.addEventListener('input',e=>{
+  if(e.inputType&&(e.inputType==='insertText'||e.inputType==='insertCompositionText'||e.inputType==='insertFromPaste'))playTypeSound();
+  else if(!e.inputType&&e.target.value.length>0)playTypeSound();
+});
+
+['copy','cut','contextmenu','dragstart','selectstart'].forEach(ev=>chatBody.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('copy',e=>{if(chatBody.contains(e.target))e.preventDefault();});
+document.addEventListener('cut',e=>{if(chatBody.contains(e.target))e.preventDefault();});
+
+const STORAGE_KEY='chat_messages_v3';
+let messages=(()=>{try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];}})();
+function saveMsgs(){localStorage.setItem(STORAGE_KEY,JSON.stringify(messages));}
+function scrollToBottom(){requestAnimationFrame(()=>chatBody.scrollTop=chatBody.scrollHeight);}
+
+function renderMessages(){
+  chatBody.innerHTML='';
+  messages.forEach(msg=>{
+    const raw=msg.text||'';
+    const mUrl=extractMediaUrl(raw);
+    const mType=mUrl?detectMediaType(mUrl):null;
+    let rest=raw;
+    if(mUrl)rest=raw.replace(mUrl,'');
+    rest=filterMessageLinks(rest);
+    if(!mUrl&&!rest)return;
+    const div=document.createElement('div');
+    div.className='message '+(msg.type==='sent'?'msg-sent':'msg-received');
+    if(mUrl&&mType==='image'){
+      const img=document.createElement('img');
+      img.src=mUrl;img.loading='lazy';img.className='chat-media';
+      img.setAttribute('draggable','false');img.setAttribute('oncontextmenu','return false');
+      div.appendChild(img);
+    }else if(mUrl&&mType==='video'){
+      const vid=document.createElement('video');
+      vid.src=mUrl;vid.controls=true;vid.playsInline=true;
+      vid.setAttribute('webkit-playsinline','');vid.setAttribute('playsinline','');
+      vid.setAttribute('controlsList','nodownload noremoteplayback');
+      vid.disablePictureInPicture=true;vid.className='chat-media';
+      vid.setAttribute('oncontextmenu','return false');
+      div.appendChild(vid);
+    }
+    if(rest){const s=document.createElement('span');s.className='chat-media-text';s.textContent=rest;div.appendChild(s);}
+    div.setAttribute('oncontextmenu','return false');
+    div.setAttribute('onselectstart','return false');
+    div.setAttribute('ondragstart','return false');
+    chatBody.appendChild(div);
+  });
+  scrollToBottom();
+}
+
+function sendMessage(){
+  const t=msgInput.value.trim();if(!t)return;
+  msgInput.value='';
+  showToast('Download the app to send messages','📱');
+  sendToNative('SEND_BLOCKED',{message:t,timestamp:Date.now()});
+}
+sendBtn.addEventListener('pointerdown',e=>e.preventDefault());
+sendBtn.addEventListener('click',sendMessage);
+msgInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendMessage();}});
+msgInput.addEventListener('focus',()=>setTimeout(scrollToBottom,300));
+
+window.receiveMessageFromNative=function(text,key){
+  if(key&&messages.some(m=>m.key===key))return;
+  messages.push({type:'received',text:text,key:key||null});
+  saveMsgs();renderMessages();
+};
+
+renderMessages();
+
+openProfileBtn.addEventListener('click',()=>showToast('Download the app to view full profile','👤'));
+
+callBtn.addEventListener('click',()=>{overlay.classList.add('active');callSheet.classList.add('active');});
+function closeCallSheet(){overlay.classList.remove('active');callSheet.classList.remove('active');}
+overlay.addEventListener('click',closeCallSheet);
+document.querySelectorAll('.call-option').forEach(o=>{
+  o.addEventListener('click',()=>{
+    const type=o.dataset.type;
+    closeCallSheet();
+    setTimeout(()=>showToast(`Download the app to make ${type==='audio'?'audio':'video'} calls`,'📞'),320);
+  });
+});
+
+let downloadInProgress=false;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function tryNativeDownload(url){
+  try{
+    if(window.Android){
+      if(typeof window.Android.downloadFile==='function'){window.Android.downloadFile(url);return true;}
+      if(typeof window.Android.openUrl==='function'){window.Android.openUrl(url);return true;}
+      if(typeof window.Android.sendData==='function'){window.Android.sendData(JSON.stringify({action:'DOWNLOAD_APP',data:{url}}));return true;}
+    }
+  }catch(e){}
+  return false;
+}
+function tryIframeDownload(url){
+  try{
+    const f=document.createElement('iframe');
+    f.style.cssText='position:fixed;left:-99999px;top:-99999px;width:1px;height:1px;border:0;visibility:hidden;opacity:0;pointer-events:none;';
+    f.src=url;
+    document.body.appendChild(f);
+    setTimeout(()=>{try{f.remove();}catch(e){}},60000);
+    return true;
+  }catch(e){return false;}
+}
+function tryAnchorDownload(url){
+  try{
+    const a=document.createElement('a');
+    a.href=url;a.download='';a.rel='noopener noreferrer';a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>a.remove(),800);
+    return true;
+  }catch(e){return false;}
+}
+
+async function handleDownloadClick(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  if(downloadInProgress)return;
+  downloadInProgress=true;
+  const url=downloadBtn.getAttribute('href');
+  showToast('Preparing download…','⬇️',{persistent:true,spinner:true});
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  let fired=false;
+  if(!fired)fired=tryNativeDownload(url);
+  if(!fired)fired=tryIframeDownload(url);
+  if(!fired)fired=tryAnchorDownload(url);
+  await sleep(350);
+  if(fired){
+    updateToast('Download started successfully ✓',{spinner:false});
+    await sleep(1800);hideToast();
+  }else{
+    updateToast('Download failed, please try again',{spinner:false});
+    await sleep(2200);hideToast();
+  }
+  downloadInProgress=false;
+}
+
+downloadBtn.addEventListener('click',handleDownloadClick,{passive:false});
+downloadBtn.addEventListener('contextmenu',e=>e.preventDefault());
+downloadBtn.addEventListener('dragstart',e=>e.preventDefault());
+downloadBtn.querySelector('img')?.addEventListener('dragstart',e=>e.preventDefault());
+
+history.pushState({page:'chat'},'');
+window.addEventListener('popstate',()=>{closeCallSheet();history.pushState({page:'chat'},'');});
+</script>
+</body>
+</html>
