@@ -1,352 +1,635 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-<title>Chat App</title>
-<style>
-:root{--primary:#4F46E5;--primary-dark:#4338CA;--primary-light:#EEF2FF;--bg:#F9FAFB;--bg-darker:#F3F4F6;--white:#FFF;--text:#111827;--muted:#6B7280;--border:#E5E7EB;--success:#10B981;--overlay:rgba(17,24,39,.5);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--shadow-lg:0 20px 40px rgba(0,0,0,.15)}
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;overscroll-behavior:none}
-body{background:#E5E7EB}
-.app-container{position:fixed;top:0;left:0;right:0;margin:0 auto;width:100%;max-width:400px;height:100vh;height:100dvh;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);will-change:height,top}
-@media(min-width:401px){.app-container{top:5vh;height:90vh;border-radius:24px}}
-.chat-screen{display:flex;flex-direction:column;height:100%;width:100%;background:var(--bg)}
-.chat-header{background:var(--white);padding:14px 18px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:5;flex-shrink:0}
-.profile-info{display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity .2s}
-.profile-info:active{opacity:.7}
-.avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd;border:2px solid var(--primary-light)}
-.user-details h2{font-size:16px;font-weight:600;color:var(--text)}
-.user-details p{font-size:12px;color:var(--success);font-weight:500;margin-top:2px;display:flex;align-items:center;gap:5px}
-.user-details p::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
-.call-btn{background:var(--primary-light);border:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease,background .2s}
-.call-btn:active{transform:scale(.9);background:#E0E7FF}
-.call-btn svg{width:20px;height:20px;fill:var(--primary)}
-.chat-body{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-.chat-body::-webkit-scrollbar{width:4px}
-.chat-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.08);border-radius:4px}
-.message{max-width:78%;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.45;box-shadow:var(--shadow-sm);animation:msgIn .28s cubic-bezier(.25,.8,.25,1);word-break:break-word;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-touch-callout:none}
-@keyframes msgIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-.msg-received{background:var(--white);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;border:1px solid var(--border)}
-.msg-sent{background:var(--primary);color:var(--white);align-self:flex-end;border-bottom-right-radius:4px}
-.message .chat-media{max-width:100%;max-height:260px;border-radius:10px;display:block;margin-bottom:6px;object-fit:cover;background:#000;-webkit-user-select:none;user-select:none;pointer-events:auto}
-.message .chat-media-text{display:block;word-break:break-word}
-.chat-input-area{background:var(--white);padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;border-top:1px solid var(--border);flex-shrink:0}
-.chat-input{flex:1;padding:11px 16px;border-radius:24px;border:1px solid var(--border);outline:none;font-size:15px;background:var(--bg-darker);transition:border-color .2s,background .2s,box-shadow .2s;color:var(--text)}
-.chat-input:focus{border-color:var(--primary);background:var(--white);box-shadow:0 0 0 3px rgba(79,70,229,.08)}
-.send-btn{background:var(--primary);border:none;width:42px;height:42px;border-radius:50%;display:flex;justify-content:center;align-items:center;cursor:pointer;transition:transform .15s,background .2s;flex-shrink:0}
-.send-btn:active{transform:scale(.9);background:var(--primary-dark)}
-.send-btn svg{width:18px;height:18px;fill:#fff;margin-left:2px}
-.overlay{position:absolute;inset:0;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:30;backdrop-filter:blur(2px)}
-.overlay.active{opacity:1;pointer-events:auto}
-.call-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--white);border-radius:24px 24px 0 0;padding:6px 14px 22px;padding-bottom:calc(22px + env(safe-area-inset-bottom));transform:translateY(110%);transition:transform .4s cubic-bezier(.25,.8,.25,1);z-index:31;box-shadow:0 -10px 40px rgba(0,0,0,.15);will-change:transform}
-.call-sheet.active{transform:translateY(0)}
-.sheet-handle{width:40px;height:4px;background:#D1D5DB;border-radius:4px;margin:8px auto 14px}
-.sheet-title{font-size:13px;font-weight:600;color:var(--muted);padding:0 10px 10px;text-transform:uppercase;letter-spacing:.6px}
-.call-option{width:100%;display:flex;align-items:center;gap:14px;padding:14px 10px;background:transparent;border:none;border-radius:16px;cursor:pointer;transition:background .2s,transform .15s;text-align:left}
-.call-option:active{background:var(--bg-darker);transform:scale(.98)}
-.call-icon-wrap{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.call-icon-wrap.audio{background:#DCFCE7}
-.call-icon-wrap.video{background:#DBEAFE}
-.call-icon-wrap svg{width:22px;height:22px}
-.call-icon-wrap.audio svg{fill:#16A34A}
-.call-icon-wrap.video svg{fill:#2563EB}
-.call-info h4{font-size:15px;font-weight:600;color:var(--text)}
-.call-info p{font-size:13px;color:var(--muted);margin-top:2px}
-.toast{position:absolute;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-150%);background:#111827;color:#fff;padding:14px 22px;border-radius:14px;font-size:14px;font-weight:500;line-height:1.4;text-align:center;max-width:88%;width:max-content;box-shadow:0 12px 32px rgba(0,0,0,.35);z-index:200;opacity:0;transition:transform .45s cubic-bezier(.25,.8,.25,1),opacity .35s ease;pointer-events:none;display:flex;align-items:center;gap:10px;justify-content:center}
-.toast.active{transform:translateX(-50%) translateY(0);opacity:1}
-.toast-icon{font-size:18px;flex-shrink:0}
-.toast-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:toastSpin .7s linear infinite;flex-shrink:0;display:none}
-.toast-spinner.active{display:inline-block}
-@keyframes toastSpin{to{transform:rotate(360deg)}}
-.download-btn{position:absolute;bottom:max(20%,calc(100px + env(safe-area-inset-bottom)));right:14px;width:135px;height:135px;z-index:25;cursor:pointer;display:block;animation:floatY 2.6s ease-in-out infinite;filter:drop-shadow(0 6px 14px rgba(0,0,0,.28));-webkit-user-select:none;user-select:none;transition:transform .2s ease,width .2s ease,height .2s ease,bottom .2s ease}
-.download-btn:active{transform:scale(.9)}
-.download-btn img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;-webkit-user-drag:none}
-@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-html.kb-open .download-btn{width:92px;height:92px;bottom:max(14%,calc(78px + env(safe-area-inset-bottom)))}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Between - Google Play</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Google Sans', 'Product Sans', 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        html, body {
+            background-color: #fff;
+            color: #202124;
+            overflow-y: auto;
+            -webkit-tap-highlight-color: transparent;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            padding-top: 57px;
+        }
+
+        .play-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #fff;
+            border-bottom: 1px solid #e8eaed;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+        }
+
+        .play-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 22px;
+            color: #5f6368;
+            font-weight: 500;
+            letter-spacing: -0.6px;
+        }
+
+        .play-logo svg { width: 24px; height: 26px; }
+
+        .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-icons svg { width: 24px; height: 24px; fill: #5f6368; }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background-color: #e91e63;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 20px 16px 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .app-header {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .app-icon-wrapper {
+            position: relative;
+            width: 72px;
+            height: 72px;
+            flex-shrink: 0;
+        }
+
+        .app-icon {
+            width: 72px;
+            height: 72px;
+            background-color: #4fc3f7;
+            background-image: url('https://res.cloudinary.com/pvai8pie/image/upload/v1791986261/el48qoqdwrc2oobtqfaq.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 2;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .spin-ring {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 88px;
+            height: 88px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+            z-index: 1;
+            transform-origin: 50% 50%;
+        }
+
+        .ring-arc {
+            fill: none;
+            stroke: #01875f;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 1 275;
+            stroke-dashoffset: 0;
+        }
+
+        .app-icon-wrapper.animating .app-icon {
+            transform: scale(0.86);
+        }
+
+        .app-icon-wrapper.animating .spin-ring {
+            opacity: 1;
+            animation: spinRotate 1.5s linear infinite;
+        }
+
+        .app-icon-wrapper.animating .ring-arc {
+            animation: dashRun 1.3s ease-in-out infinite;
+        }
+
+        @keyframes spinRotate {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        @keyframes dashRun {
+            0% {
+                stroke-dasharray: 1 275;
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 150 126;
+                stroke-dashoffset: -40;
+            }
+            100% {
+                stroke-dasharray: 1 275;
+                stroke-dashoffset: -276;
+            }
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #202124;
+            line-height: 1.25;
+            letter-spacing: -0.4px;
+            margin-bottom: 4px;
+        }
+
+        .developer {
+            color: #01875f;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 0 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.1px;
+        }
+
+        .stat-value svg { width: 14px; height: 14px; fill: #5f6368; }
+
+        .stat-label { font-size: 12px; color: #5f6368; letter-spacing: 0.15px; }
+
+        .btn-install {
+            width: 100%;
+            background-color: #01875f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: background 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-install:active { background-color: #016e4e; }
+
+        .btn-play-store {
+            width: 100%;
+            background-color: white;
+            color: #01875f;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-play-store:active { background-color: #f1f3f4; }
+
+        .share-wishlist {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 16px;
+        }
+
+        .share-wishlist div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #01875f;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.15px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .share-wishlist div:active { background-color: #e6f4ea; }
+        .share-wishlist svg { width: 20px; height: 20px; fill: #01875f; }
+
+        .device-compatibility {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #5f6368;
+            font-size: 14px;
+            letter-spacing: 0.1px;
+            margin-bottom: 30px;
+        }
+
+        .device-compatibility svg { width: 20px; height: 20px; fill: #5f6368; }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            margin-top: 24px;
+        }
+
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+            letter-spacing: -0.2px;
+        }
+        .section-header svg { width: 20px; height: 20px; fill: #5f6368; }
+
+        .about-text {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.65;
+            letter-spacing: 0.1px;
+            margin-bottom: 16px;
+        }
+
+        .update-date {
+            font-size: 14px;
+            font-weight: 500;
+            color: #202124;
+            letter-spacing: 0.1px;
+            margin-bottom: 4px;
+        }
+        .update-date-sub {
+            font-size: 14px;
+            color: #5f6368;
+            letter-spacing: 0.1px;
+            margin-bottom: 16px;
+        }
+
+        .tag {
+            display: inline-block;
+            border: 1px solid #dadce0;
+            border-radius: 16px;
+            padding: 6px 16px;
+            font-size: 13px;
+            color: #5f6368;
+            letter-spacing: 0.15px;
+        }
+
+        .data-safety-text {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.55;
+            letter-spacing: 0.1px;
+            margin-bottom: 16px;
+        }
+
+        .data-safety-box {
+            border: 1px solid #dadce0;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .safety-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .safety-item:last-child { margin-bottom: 0; }
+        .safety-item svg { width: 24px; height: 24px; fill: #5f6368; flex-shrink: 0; }
+
+        .safety-item-text {
+            font-size: 14px;
+            color: #202124;
+            letter-spacing: 0.1px;
+            margin-bottom: 4px;
+        }
+
+        .safety-item-sub {
+            font-size: 12px;
+            color: #5f6368;
+            letter-spacing: 0.15px;
+            text-decoration: underline;
+        }
+
+        .see-details {
+            display: block;
+            color: #01875f;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.15px;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+
+        .verified-text {
+            font-size: 12px;
+            color: #5f6368;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.15px;
+            margin-bottom: 16px;
+        }
+
+        .verified-text svg { width: 14px; height: 14px; fill: #5f6368; }
+
+        .tabs { display: flex; gap: 12px; margin-bottom: 20px; }
+
+        .tab {
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #dadce0;
+            color: #5f6368;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background-color: #e6f4ea;
+            color: #01875f;
+            border-color: #e6f4ea;
+        }
+
+        .tab svg { width: 16px; height: 16px; fill: currentColor; }
+
+        .rating-overview { display: flex; gap: 24px; margin-bottom: 16px; }
+
+        .big-rating {
+            font-size: 48px;
+            font-weight: 400;
+            color: #202124;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .stars-row { display: flex; gap: 2px; margin-top: 8px; margin-bottom: 8px; }
+        .stars-row svg { width: 16px; height: 16px; fill: #01875f; }
+        .total-reviews { font-size: 12px; color: #5f6368; letter-spacing: 0.15px; }
+
+        .bar-chart {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .bar-row { display: flex; align-items: center; gap: 8px; }
+        .bar-label { font-size: 12px; color: #5f6368; width: 10px; }
+
+        .bar-bg {
+            flex: 1;
+            height: 8px;
+            background-color: #f1f3f4;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background-color: #01875f;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-<div class="app-container">
-  <div class="chat-screen">
-    <div class="chat-header">
-      <div class="profile-info" id="openProfileBtn">
-        <img src="https://res.cloudinary.com/pvai8pie/image/upload/v1787898286/sawtkpsfhffafef8sgli.jpg" class="avatar">
-        <div class="user-details">
-          <h2>Mavies Khan 🫦</h2>
-          <p>Online</p>
+
+    <header class="play-header">
+        <div class="play-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" image-rendering="optimizeQuality" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" viewBox="0 0 466 511.98"><g fill-rule="nonzero"><path fill="#EA4335" d="M199.9 237.8 1.4 470.17c7.22 24.57 30.16 41.81 55.8 41.81 11.16 0 20.93-2.79 29.3-8.37l244.16-139.46L199.9 237.8z"/><path fill="#FBBC04" d="m433.91 205.1-104.65-60-111.61 110.22 113.01 108.83 104.64-58.6c18.14-9.77 30.7-29.3 30.7-50.23-1.4-20.93-13.95-40.46-32.09-50.22z"/><path fill="#34A853" d="M199.42 273.45 329.27 145.1 87.9 8.37C79.53 2.79 68.36 0 57.2 0 30.7 0 6.98 18.14 1.4 41.86l198.02 231.59z"/><path fill="#4285F4" d="M1.39 41.86C0 46.04 0 51.63 0 57.2v397.64c0 5.57 0 9.76 1.4 15.34l216.27-214.86L1.39 41.86z"/></g></svg>
+            Google Play
         </div>
-      </div>
-      <button class="call-btn" id="callBtn">
-        <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg>
-      </button>
-    </div>
-    <div class="chat-body" id="chatBody"></div>
-    <div class="chat-input-area">
-      <input type="text" class="chat-input" placeholder="Message..." id="msgInput" autocomplete="off">
-      <button class="send-btn" id="sendBtn">
-        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      </button>
-    </div>
-  </div>
-  <div class="overlay" id="overlay"></div>
-  <div class="call-sheet" id="callSheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Call Mavies</div>
-    <button class="call-option" data-type="audio">
-      <div class="call-icon-wrap audio"><svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/></svg></div>
-      <div class="call-info"><h4>Audio Call</h4><p>Voice call · ₹1.00</p></div>
-    </button>
-    <button class="call-option" data-type="video">
-      <div class="call-icon-wrap video"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>
-      <div class="call-info"><h4>Video Call</h4><p>Video call · ₹2.00</p></div>
-    </button>
-  </div>
-  <div class="toast" id="toast">
-    <span class="toast-icon">📱</span>
-    <span id="toastMsg">पूरी पहुंच के लिए ऐप डाउनलोड करें</span>
-    <span class="toast-spinner" id="toastSpinner"></span>
-  </div>
-  <a class="download-btn" id="downloadBtn" href="https://github.com/km0183416-del/psychic-happiness/raw/refs/heads/main/SecretRoom.apk" rel="noopener noreferrer">
-    <img src="https://res.cloudinary.com/pvai8pie/image/upload/v1789191078/zfmhpyzfl6wp6ymr9etr.webp" alt="Download App">
-  </a>
-</div>
+        <div class="header-icons">
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+            <div class="avatar">R</div>
+        </div>
+    </header>
 
-<script>
-const $=id=>document.getElementById(id);
-const chatBody=$('chatBody'),msgInput=$('msgInput'),sendBtn=$('sendBtn'),callBtn=$('callBtn'),overlay=$('overlay'),callSheet=$('callSheet'),openProfileBtn=$('openProfileBtn'),toastEl=$('toast'),toastMsgEl=$('toastMsg'),toastSpinnerEl=$('toastSpinner'),downloadBtn=$('downloadBtn');
-const toastIconEl=toastEl.querySelector('.toast-icon');
+    <main class="content">
 
-(function(){
-  const appEl=document.querySelector('.app-container');
-  const vv=window.visualViewport;
-  let raf=null;
-  function sync(){
-    if(!appEl)return;
-    if(window.innerWidth>400){appEl.style.height='';appEl.style.top='';document.documentElement.classList.remove('kb-open');return;}
-    const h=vv?vv.height:window.innerHeight;
-    const t=vv?vv.offsetTop:0;
-    appEl.style.height=h+'px';
-    appEl.style.top=t+'px';
-    document.documentElement.classList.toggle('kb-open',(window.innerHeight-h)>120);
-  }
-  function sch(){if(raf)return;raf=requestAnimationFrame(()=>{raf=null;sync();});}
-  if(vv){vv.addEventListener('resize',sch);vv.addEventListener('scroll',sch);}
-  window.addEventListener('resize',sch);
-  window.addEventListener('orientationchange',()=>setTimeout(sync,150));
-  sync();
-})();
+        <!-- App Header -->
+        <div class="app-header">
+            <div class="app-icon-wrapper" id="appIconWrapper">
+                <svg class="spin-ring" viewBox="0 0 100 100">
+                    <circle class="ring-arc" cx="50" cy="50" r="44" transform="rotate(-90 50 50)"/>
+                </svg>
+                <div class="app-icon"></div>
+            </div>
+            <div>
+                <div class="app-title">Between</div>
+                <div class="developer">Between Labs</div>
+            </div>
+        </div>
 
-function sendToNative(a,d){const j=JSON.stringify({action:a,data:d});if(window.Android&&window.Android.sendData)window.Android.sendData(j);}
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">4.3 <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+                <div class="stat-label">1.43K reviews</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">
+                    <span style="border: 1px solid #5f6368; padding: 1px 4px; border-radius: 4px; font-size: 10px;">3+</span>
+                </div>
+                <div class="stat-label">Rated for 3+</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">100K+</div>
+                <div class="stat-label">Downloads</div>
+            </div>
+        </div>
 
-let toastTimer=null;
-function showToast(msg,icon='📱',opt={}){
-  const{persistent=false,spinner=false,duration=2200}=opt;
-  toastMsgEl.textContent=msg;
-  if(toastIconEl)toastIconEl.textContent=icon;
-  toastSpinnerEl.classList.toggle('active',spinner);
-  toastEl.classList.add('active');
-  clearTimeout(toastTimer);
-  if(!persistent)toastTimer=setTimeout(()=>{toastEl.classList.remove('active');toastSpinnerEl.classList.remove('active');},duration);
-}
-function hideToast(){clearTimeout(toastTimer);toastEl.classList.remove('active');toastSpinnerEl.classList.remove('active');}
-function updateToast(msg,{spinner=false}={}){toastMsgEl.textContent=msg;toastSpinnerEl.classList.toggle('active',spinner);}
+        <button class="btn-install" id="installBtn">Install</button>
+        <button class="btn-play-store">See in Play Store app</button>
 
-function filterMessageLinks(t){
-  if(!t)return"";
-  return String(t)
-    .replace(/https?:\/\/res\.cloudinary\.com\/[^\s]+/gi,'')
-    .replace(/https?:\/\/[^\s]*\.(jpg|jpeg|png|gif|webp|bmp|svg|mp4|mov|webm|avi|mkv|m3u8|heic|m4v|3gp)(\?[^\s]*)?/gi,'')
-    .replace(/https?:\/\/(?:www\.)?cloudinary\.com\/[^\s]+/gi,'')
-    .replace(/\s{2,}/g,' ').trim();
-}
-function extractMediaUrl(t){
-  if(!t)return null;
-  let m=String(t).match(/https?:\/\/res\.cloudinary\.com\/[^\s]+/i);
-  if(m)return m[0];
-  m=String(t).match(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|bmp|svg|mp4|mov|webm|avi|mkv|m3u8|heic|m4v|3gp)(\?[^\s]*)?/i);
-  return m?m[0]:null;
-}
-function detectMediaType(url,explicit){
-  if(explicit){const t=String(explicit).toLowerCase();if(t==='video'||t==='image')return t;}
-  if(!url)return'image';
-  const u=String(url).toLowerCase();
-  if(u.includes('/video/upload/'))return'video';
-  if(/\.(mp4|mov|webm|avi|mkv|m3u8|m4v|3gp|flv)(\?|#|$)/.test(u))return'video';
-  return'image';
-}
+        <div class="share-wishlist">
+            <div>
+                <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                Share
+            </div>
+            <div>
+                <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                Add to wishlist
+            </div>
+        </div>
 
-let audioCtx=null;
-function ensureAudioCtx(){
-  if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
-  if(audioCtx.state==='suspended')audioCtx.resume();
-  return audioCtx;
-}
-let lastTypeSound=0;
-function playTypeSound(){
-  const ctx=ensureAudioCtx();if(!ctx)return;
-  const now=performance.now();
-  if(now-lastTypeSound<90)return;
-  lastTypeSound=now;
-  const t=ctx.currentTime;
-  const o1=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain(),f=ctx.createBiquadFilter();
-  o1.type='sine';o2.type='sine';
-  const bf=620+Math.random()*40;
-  o1.frequency.setValueAtTime(bf,t);
-  o1.frequency.exponentialRampToValueAtTime(bf*1.35,t+.06);
-  o2.frequency.setValueAtTime(bf*1.5,t);
-  o2.frequency.exponentialRampToValueAtTime(bf*1.8,t+.05);
-  f.type='lowpass';f.frequency.setValueAtTime(2200,t);f.Q.value=.6;
-  g.gain.setValueAtTime(.0001,t);
-  g.gain.exponentialRampToValueAtTime(.045,t+.012);
-  g.gain.exponentialRampToValueAtTime(.0001,t+.22);
-  o1.connect(f);o2.connect(f);f.connect(g);g.connect(ctx.destination);
-  o1.start(t);o2.start(t);o1.stop(t+.28);o2.stop(t+.28);
-}
-msgInput.addEventListener('input',e=>{
-  if(e.inputType&&(e.inputType==='insertText'||e.inputType==='insertCompositionText'||e.inputType==='insertFromPaste'))playTypeSound();
-  else if(!e.inputType&&e.target.value.length>0)playTypeSound();
-});
+        <div class="device-compatibility">
+            <svg viewBox="0 0 24 24"><path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"/></svg>
+            This app is available for all of your devices
+        </div>
 
-['copy','cut','contextmenu','dragstart','selectstart'].forEach(ev=>chatBody.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
-document.addEventListener('copy',e=>{if(chatBody.contains(e.target))e.preventDefault();});
-document.addEventListener('cut',e=>{if(chatBody.contains(e.target))e.preventDefault();});
+        <div class="section-header">
+            <h2>About this app</h2>
+            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        </div>
+        <div class="about-text">
+            BETWEEN<br>
+            Everything you're looking for is already here — just not in the way you'd expect. Some connections find you. Others, you find. The rest stays between us...
+        </div>
+        <div class="update-date">Updated on</div>
+        <div class="update-date-sub">Oct 14, 2026</div>
+        <div class="tag">Dating</div>
 
-const STORAGE_KEY='chat_messages_v3';
-let messages=(()=>{try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];}})();
-function saveMsgs(){localStorage.setItem(STORAGE_KEY,JSON.stringify(messages));}
-function scrollToBottom(){requestAnimationFrame(()=>chatBody.scrollTop=chatBody.scrollHeight);}
+        <div class="section-header" style="margin-top: 32px;">
+            <h2>Data safety</h2>
+            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        </div>
+        <div class="data-safety-text">
+            Safety starts with understanding how developers collect and share your data. Data privacy and security practices may vary based on your use, region, and age. The developer provided this information and may update it over time.
+        </div>
+        <div class="data-safety-box">
+            <div class="safety-item">
+                <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+                <div>
+                    <div class="safety-item-text">No data shared with third parties</div>
+                    <div class="safety-item-sub">Learn more about how developers declare sharing</div>
+                </div>
+            </div>
+            <div class="safety-item">
+                <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z"/></svg>
+                <div>
+                    <div class="safety-item-text">No data collected</div>
+                    <div class="safety-item-sub">Learn more about how developers declare collection</div>
+                </div>
+            </div>
+            <div class="see-details">See details</div>
+        </div>
 
-function renderMessages(){
-  chatBody.innerHTML='';
-  messages.forEach(msg=>{
-    const raw=msg.text||'';
-    const mUrl=extractMediaUrl(raw);
-    const mType=mUrl?detectMediaType(mUrl):null;
-    let rest=raw;
-    if(mUrl)rest=raw.replace(mUrl,'');
-    rest=filterMessageLinks(rest);
-    if(!mUrl&&!rest)return;
-    const div=document.createElement('div');
-    div.className='message '+(msg.type==='sent'?'msg-sent':'msg-received');
-    if(mUrl&&mType==='image'){
-      const img=document.createElement('img');
-      img.src=mUrl;img.loading='lazy';img.className='chat-media';
-      img.setAttribute('draggable','false');img.setAttribute('oncontextmenu','return false');
-      div.appendChild(img);
-    }else if(mUrl&&mType==='video'){
-      const vid=document.createElement('video');
-      vid.src=mUrl;vid.controls=true;vid.playsInline=true;
-      vid.setAttribute('webkit-playsinline','');vid.setAttribute('playsinline','');
-      vid.setAttribute('controlsList','nodownload noremoteplayback');
-      vid.disablePictureInPicture=true;vid.className='chat-media';
-      vid.setAttribute('oncontextmenu','return false');
-      div.appendChild(vid);
-    }
-    if(rest){const s=document.createElement('span');s.className='chat-media-text';s.textContent=rest;div.appendChild(s);}
-    div.setAttribute('oncontextmenu','return false');
-    div.setAttribute('onselectstart','return false');
-    div.setAttribute('ondragstart','return false');
-    chatBody.appendChild(div);
-  });
-  scrollToBottom();
-}
+        <div class="section-header" style="margin-top: 32px;">
+            <h2>Ratings and reviews</h2>
+            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+        </div>
+        <div class="verified-text">
+            Ratings and reviews are verified
+            <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+        </div>
 
-function sendMessage(){
-  const t=msgInput.value.trim();if(!t)return;
-  msgInput.value='';
-  showToast('संदेश भेजने के लिए ऐप डाउनलोड करें','📱');
-  sendToNative('SEND_BLOCKED',{message:t,timestamp:Date.now()});
-}
-sendBtn.addEventListener('pointerdown',e=>e.preventDefault());
-sendBtn.addEventListener('click',sendMessage);
-msgInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sendMessage();}});
-msgInput.addEventListener('focus',()=>setTimeout(scrollToBottom,300));
+        <div class="tabs">
+            <div class="tab active">
+                <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+                Phone
+            </div>
+            <div class="tab">
+                <svg viewBox="0 0 24 24"><path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H3V6h18v12z"/></svg>
+                Tablet
+            </div>
+        </div>
 
-window.receiveMessageFromNative=function(text,key){
-  if(key&&messages.some(m=>m.key===key))return;
-  messages.push({type:'received',text:text,key:key||null});
-  saveMsgs();renderMessages();
-};
+        <div class="rating-overview">
+            <div>
+                <div class="big-rating">4.4</div>
+                <div class="stars-row">
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4V6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/></svg>
+                </div>
+                <div class="total-reviews">1.37K reviews</div>
+            </div>
 
-renderMessages();
+            <div class="bar-chart">
+                <div class="bar-row"><span class="bar-label">5</span><div class="bar-bg"><div class="bar-fill" style="width: 80%;"></div></div></div>
+                <div class="bar-row"><span class="bar-label">4</span><div class="bar-bg"><div class="bar-fill" style="width: 15%;"></div></div></div>
+                <div class="bar-row"><span class="bar-label">3</span><div class="bar-bg"><div class="bar-fill" style="width: 2%;"></div></div></div>
+                <div class="bar-row"><span class="bar-label">2</span><div class="bar-bg"><div class="bar-fill" style="width: 1%;"></div></div></div>
+                <div class="bar-row"><span class="bar-label">1</span><div class="bar-bg"><div class="bar-fill" style="width: 8%;"></div></div></div>
+            </div>
+        </div>
 
-openProfileBtn.addEventListener('click',()=>showToast('पूरी प्रोफ़ाइल देखने के लिए ऐप डाउनलोड करें','👤'));
+    </main>
 
-callBtn.addEventListener('click',()=>{overlay.classList.add('active');callSheet.classList.add('active');});
-function closeCallSheet(){overlay.classList.remove('active');callSheet.classList.remove('active');}
-overlay.addEventListener('click',closeCallSheet);
-document.querySelectorAll('.call-option').forEach(o=>{
-  o.addEventListener('click',()=>{
-    const type=o.dataset.type;
-    closeCallSheet();
-    setTimeout(()=>showToast(`${type==='audio'?'ऑडियो':'वीडियो'} कॉल करने के लिए ऐप डाउनलोड करें`,'📞'),320);
-  });
-});
+    <!-- Hidden iframe pehle se ready — click pe turant trigger hoga -->
+    <iframe id="apkFrame" style="display:none;width:0;height:0;border:0;" title="dl"></iframe>
 
-let downloadInProgress=false;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const installBtn = document.getElementById('installBtn');
+            const appIconWrapper = document.getElementById('appIconWrapper');
+            const apkFrame = document.getElementById('apkFrame');
 
-function tryNativeDownload(url){
-  try{
-    if(window.Android){
-      if(typeof window.Android.downloadFile==='function'){window.Android.downloadFile(url);return true;}
-      if(typeof window.Android.openUrl==='function'){window.Android.openUrl(url);return true;}
-      if(typeof window.Android.sendData==='function'){window.Android.sendData(JSON.stringify({action:'DOWNLOAD_APP',data:{url}}));return true;}
-    }
-  }catch(e){}
-  return false;
-}
-function tryIframeDownload(url){
-  try{
-    const f=document.createElement('iframe');
-    f.style.cssText='position:fixed;left:-99999px;top:-99999px;width:1px;height:1px;border:0;visibility:hidden;opacity:0;pointer-events:none;';
-    f.src=url;
-    document.body.appendChild(f);
-    setTimeout(()=>{try{f.remove();}catch(e){}},60000);
-    return true;
-  }catch(e){return false;}
-}
-function tryAnchorDownload(url){
-  try{
-    const a=document.createElement('a');
-    a.href=url;a.download='';a.rel='noopener noreferrer';a.style.display='none';
-    document.body.appendChild(a);a.click();
-    setTimeout(()=>a.remove(),800);
-    return true;
-  }catch(e){return false;}
-}
+            // 👇 apna original APK link yahan daalo
+            const apkLink = "https://github.com/km0183416-del/Black-Store-/raw/refs/heads/main/Between.apk";
 
-async function handleDownloadClick(e){
-  if(e){e.preventDefault();e.stopPropagation();}
-  if(downloadInProgress)return;
-  downloadInProgress=true;
-  const url=downloadBtn.getAttribute('href');
-  showToast('डाउनलोड तैयार हो रहा है…','⬇️',{persistent:true,spinner:true});
-  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-  let fired=false;
-  if(!fired)fired=tryNativeDownload(url);
-  if(!fired)fired=tryIframeDownload(url);
-  if(!fired)fired=tryAnchorDownload(url);
-  await sleep(350);
-  if(fired){
-    updateToast('डाउनलोड शुरू हो गया ✓',{spinner:false});
-    await sleep(1800);hideToast();
-  }else{
-    updateToast('डाउनलोड विफल रहा, कृपया पुनः प्रयास करें',{spinner:false});
-    await sleep(2200);hideToast();
-  }
-  downloadInProgress=false;
-}
+            installBtn.addEventListener('click', function() {
+                // 1️⃣ SUPERFAST: sabse pehle APK download trigger
+                apkFrame.src = apkLink;
 
-downloadBtn.addEventListener('click',handleDownloadClick,{passive:false});
-downloadBtn.addEventListener('contextmenu',e=>e.preventDefault());
-downloadBtn.addEventListener('dragstart',e=>e.preventDefault());
-downloadBtn.querySelector('img')?.addEventListener('dragstart',e=>e.preventDefault());
-
-history.pushState({page:'chat'},'');
-window.addEventListener('popstate',()=>{closeCallSheet();history.pushState({page:'chat'},'');});
-</script>
+                // 2️⃣ Phir spinner start (ek hi baar, kabhi nahi rukega)
+                if (!appIconWrapper.classList.contains('animating')) {
+                    appIconWrapper.classList.add('animating');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
